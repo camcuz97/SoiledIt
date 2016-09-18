@@ -23,3 +23,6 @@ Welcome to the SoiledIt project page, created for the BudLabs hackathon 2016. Th
     * about.html: The about page. Check us out!
     * index.html: The main page. You'll see this first!
   * app.py: The Flask main file. This is where the server handles all the data and incoming requests.
+
+## How to run
+Server: To spin up the server, make sure you have Python and Flask installed. Navigate into the folder that contains "app.py", and run "python app.py"
