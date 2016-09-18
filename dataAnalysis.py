@@ -22,7 +22,6 @@ def fitnessFunct(rowArray):
     for row in rowArray:
         tempScore = findFitness(row)
         tupleArray.append((row[2],row[3],tempScore))
-        print tempScore
     return tupleArray
 
 def findFitness(row):
