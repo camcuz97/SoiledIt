@@ -10,20 +10,52 @@ var heatEnabled = false;  //Is the heat map turned on?
 var heatMap = null;       //The heatmap layer object
 var heatData = null;      //The currently displayed heatmap data
 
+var tspPoly = null;
+
 function initMap() {
   centerPos = new google.maps.LatLng(40.0, -88.0);
 
   map = new google.maps.Map(document.getElementById('map'), {
     center: centerPos,
-    zoom: 16,
+    zoom: 14,
     mapTypeId: 'hybrid'
   });
 
   map.addListener('click', function(event) {
     if(firstMarker == null) {
-      firstMarker = getNewMarker();
+      firstMarker = new google.maps.Marker({
+        map: map,
+        draggable: true,
+        animation: google.maps.Animation.DROP,
+        position: event.latLng
+      });
+
+      //Make the marker listen to changes and update as needed
+      firstMarker.addListener('position_changed', function(event) {
+        redrawPolygon();
+      });
+
+      //When we finalize a choice, request updated data
+      firstMarker.addListener('dragend', function(event) {
+        requestData();
+      });
     } else if(secondMarker == null) {
-      secondMarker = getNewMarker();
+      secondMarker = new google.maps.Marker({
+        map: map,
+        draggable: true,
+        animation: google.maps.Animation.DROP,
+        position: event.latLng
+      });
+
+      //Make the marker listen to changes and update as needed
+      secondMarker.addListener('position_changed', function(event) {
+        redrawPolygon();
+      });
+
+      //When we finalize a choice, request updated data
+      secondMarker.addListener('dragend', function(event) {
+        requestData();
+      });
 
       //Draw & get data for the first time
       redrawPolygon();
@@ -32,79 +64,52 @@ function initMap() {
   });
 }
 
-function getNewMarker() {
-  var newMarker = new google.maps.Marker({
-    map: map,
-    draggable: true,
-    animation: google.maps.Animation.DROP,
-    position: event.latLng
-  });
-
-  //Make the marker listen to changes and update as needed
-  newMarker.addListener('position_changed', redrawPolygon());
-
-  //When we finalize a choice, request updated data
-  newMarker.addListener('dragend', requestData());
-
-  return newMarker;
-}
-
-//Get an array of the min/max lat/long - used in drawing
-function getMinMax() {
-  if(firstMarker == null || secondMarker == null) {
-    return [];
-  }
-
-  var lat1 = firstMarker.getPosition().lat();
-  var lng1 = firstMarker.getPosition().lng();
-  var lat2 = secondMarker.getPosition().lat();
-  var lng2 = secondMarker.getPosition().lng()
-
-  var x1 = Math.min(lat1, lat2); //lowest lat
-  var y1 = Math.min(lng1, lng2); //lowest lng
-  var x2 = Math.max(lat1, lat2); //highest lat
-  var y2 = Math.max(lng1, lng2); //highest lng
-
-  return [x1, y1, x2, y2];
-}
-
 function redrawPolygon() {
-  var minMax = getMinMax();
+  if(firstMarker != null && secondMarker != null) {
+    var lat1 = firstMarker.getPosition().lat();
+    var lng1 = firstMarker.getPosition().lng();
+    var lat2 = secondMarker.getPosition().lat();
+    var lng2 = secondMarker.getPosition().lng()
 
-  var coords = [
-    {lat: minMax[0], lng: minMax[1]}, //nw
-    {lat: minMax[0], lng: minMax[3]}, //sw
-    {lat: minMax[2], lng: minMax[3]}, //se
-    {lat: minMax[2], lng: minMax[1]}, //ne
-    {lat: minMax[0], lng: minMax[1]}  //back around
-  ];
+    var x1 = Math.min(lat1, lat2); //lowest lat
+    var y1 = Math.min(lng1, lng2); //lowest lng
+    var x2 = Math.max(lat1, lat2); //highest lat
+    var y2 = Math.max(lng1, lng2); //highest lng
 
-  //The default polygon rendering option - red outline, red fill
-  var normalOption = {
-    paths: [coords],
-    strokeColor: '#FF0000',
-    strokeOpacity: 0.5,
-    fillColor: '#AA0000',
-    fillOpacity: 0.2,
-    strokeWeight: 2
-  };
+    var coords = [
+      {lat: x1, lng: y1}, //nw
+      {lat: x1, lng: y2}, //sw
+      {lat: x2, lng: y2}, //se
+      {lat: x2, lng: y1}, //ne
+      {lat: x1, lng: y1}  //back around
+    ];
 
-  if(selectPolygon == null) {
-    //Create a new polygon and draw it
-    selectPolygon = new google.maps.Polygon(normalOption);
-    selectPolygon.setMap(map);
-  } else {
-    //Otherwise, just update the one we already have
-    if(!heatEnabled) {
-      selectPolygon.setOptions(normalOption);
-    } else { //Heatmap polygon options - black with clear background
-      selectPolygon.setOptions({
-        paths: [coords],
-        strokeColor: '#000000',
-        strokeOpacity: 0.5,
-        fillOpacity: 0,
-        strokeWeight: 2
-      });
+    var normalOptions = {
+      paths: [coords],
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.5,
+      fillColor: '#AA0000',
+      fillOpacity: 0.2,
+      strokeWeight: 2
+    }
+
+    if(selectPolygon == null) {
+      //Create a new polygon and draw it
+      selectPolygon = new google.maps.Polygon(normalOptions);
+      selectPolygon.setMap(map);
+    } else {
+      //Otherwise, just update the one we already have
+      if(heatEnabled) {
+        selectPolygon.setOptions({
+          paths: [coords],
+          strokeColor: '#000000',
+          strokeOpacity: 0.5,
+          fillOpacity: 0,
+          strokeWeight: 2
+        });
+      } else {
+        selectPolygon.setOptions(normalOptions);
+      }
     }
   }
 }
@@ -125,26 +130,44 @@ function redrawHeatMap() {
       fillOpacity: 0,
       strokeWeight: 2
     });
+    heatMap.setMap(map);
     heatEnabled = true;
   } else {
     heatMap.setData(heatData);
+    heatMap.setMap(map)
   }
-  heatMap.setMap(map);
+
+  if(heatMap == null) {
+    if(heatData !== null) {
+      heatMap = new google.maps.visualization.HeatmapLayer({
+      });
+      heatMap.setMap(map);
+    }
+  } else if(heatData !== null) {
+  }
 }
 
 function requestData() {
   if(selectPolygon !== null) {
-    var minMax = getMinMax();
+    var lat1 = firstMarker.getPosition().lat();
+    var lng1 = firstMarker.getPosition().lng();
+    var lat2 = secondMarker.getPosition().lat();
+    var lng2 = secondMarker.getPosition().lng();
+
+    var x1 = Math.min(lat1, lat2); //lowest lat
+    var y1 = Math.min(lng1, lng2); //lowest lng
+    var x2 = Math.max(lat1, lat2); //highest lat
+    var y2 = Math.max(lng1, lng2); //highest lng
 
     var str = "select" +
-      "?minlat=" + minMax[0] +
-      "&minlng=" + minMax[1] +
-      "&maxlat=" + minMax[2] +
-      "&maxlng=" + minMax[3];
+      "?minlat=" + x1 +
+      "&minlng=" + y1 +
+      "&maxlat=" + x2 +
+      "&maxlng=" + y2;
 
     var request = new XMLHttpRequest();
-    request.open("GET", str);
-    request.send();
+    request.open("POST", str);
+    request.send("");
     request.onreadystatechange = function() { //When ready
       if(request.readyState === 4 && request.responseType === "") {
         var resp = JSON.parse(request.response);
@@ -158,7 +181,45 @@ function requestData() {
         }
         heatData = dataArray;
         redrawHeatMap();
+        travel();
       }
     };
   }
 }
+
+/*
+function travel() {
+  var lat1 = firstMarker.getPosition().lat();
+  var lng1 = firstMarker.getPosition().lng();
+  var lat2 = secondMarker.getPosition().lat();
+  var lng2 = secondMarker.getPosition().lng();
+
+  //Note: 1/69 turns degrees -> miles. Our range is ~3.75 miles
+  var magic = (3.75 / 69);
+
+  //If true, then just one square
+  //if((Math.abs(Math.abs(lat1) - Math.abs(lat2)) <= magic) &&
+  //   (Math.abs(Math.abs(lng1) - Math.abs(lng2)) <= magic)) {
+
+    var data = heatMap.getData();
+    var dArray = [];
+    for(var i = 0; i < data.getLength(); i++)
+      dArray.push[data.getAt(i)];
+    dArray.sort(function(a, b) {return a[2] - b[2];});
+
+    var points = [map.getCenter()];
+    for(var i = 0; i < Math.max(5, data.getLength() / 5) ; i++)
+      points.push(dArray[i][location]);
+    points.push(map.getCenter());
+
+    console.log("Made a line with " + points.length + " points.")
+
+    tspPoly = new google.maps.Polyline({
+      map: map,
+      path: points,
+      strokeColor: '#0000FF',
+      strokeOpacity: 0.7,
+      strokeWeight: 3
+    });
+  //}
+}*/

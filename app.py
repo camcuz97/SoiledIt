@@ -41,7 +41,7 @@ def findData(minX, maxX, minY, maxY):
             count += 1
             if abs(float(row[2])) >= minLat and abs(float(row[2])) <= maxLat and abs(float(row[3])) >= minLng and abs(float(row[3])) <= maxLng:
                 rowArray.append(row)
-        csvfile.seek(0) #reset file iterator
+        csvfile.seek(0)
         return fitnessFunct(rowArray)
 
 def binSearch(csv, len, minX, maxX, minY, maxY):
@@ -90,7 +90,9 @@ def findFitness(row):
 
     return float(score)/27.0
 
-#end data analysis methods, begin Flask code
+#end data analysis methods
+
+lastPoints = None
 
 #general- main page
 @app.route('/index')
@@ -98,16 +100,24 @@ def findFitness(row):
 def hello_world():
 	return render_template('index.html')
 
-#when we have selected an area
-@app.route('/select', methods=['GET', 'POST'])
+#when we have selected an area, return points
+@app.route('/select', methods=['POST', 'GET'])
 def selector():
 	minlat = float(request.args.get('minlat'))
 	minlng = float(request.args.get('minlng'))
 	maxlat = float(request.args.get('maxlat'))
 	maxlng = float(request.args.get('maxlng'))
 
-	points = findData(minlat, maxlat, minlng, maxlng)
-	return json.dumps(points)
+	lastPoints = findData(minlat, maxlat, minlng, maxlng)
+	return json.dumps(lastPoints)
+
+@app.route('/travel')
+def traveller():
+    if lastPoints == None:
+        print "No points found to calculate!"
+        return "Nothing found!"
+    topTen = sorted(range(len(lastPoints)), key=lambda i: a[i])[-10:]
+
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", debug=True)
