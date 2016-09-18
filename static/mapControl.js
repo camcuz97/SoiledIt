@@ -29,6 +29,11 @@ function initMap() {
       firstMarker.addListener('position_changed', function(event) {
         redrawPolygon();
       });
+
+      //When we finalize a choice, request updated data
+      firstMarker.addListener('dragend', function(event) {
+        requestData();
+      });
     } else if(secondMarker == null) {
       //Create a new marker
       secondMarker = new google.maps.Marker({
@@ -43,8 +48,14 @@ function initMap() {
         redrawPolygon();
       });
 
-      //Draw for the first time
+      //When we finalize a choice, request updated data
+      secondMarker.addListener('dragend', function(event) {
+        requestData();
+      });
+
+      //Draw & get data for the first time
       redrawPolygon();
+      requestData();
     }
   });
 }
@@ -84,8 +95,6 @@ function redrawPolygon() {
       //Otherwise, just update the one we already have
       selectPolygon.setPath(coords);
     }
-
-    //Here, we would call the python script to check out the data!
   }
 }
 
@@ -94,5 +103,44 @@ function toggleBounce() {
     marker.setAnimation(null);
   } else {
     marker.setAnimation(google.maps.Animation.BOUNCE);
+  }
+}
+
+function requestData() {
+  if(selectPolygon !== null) {
+    var lat1 = firstMarker.getPosition().lat();
+    var lng1 = firstMarker.getPosition().lng();
+    var lat2 = secondMarker.getPosition().lat();
+    var lng2 = secondMarker.getPosition().lng()
+
+    var x1 = Math.min(lat1, lat2); //lowest lat
+    var y1 = Math.min(lng1, lng2); //lowest lng
+    var x2 = Math.max(lat1, lat2); //highest lat
+    var y2 = Math.max(lng1, lng2); //highest lng
+
+    var str = "select" +
+      "?minlat=" + x1 +
+      "&minlng=" + y1 +
+      "&maxlat=" + x2 +
+      "&maxlng=" + y2;
+
+    var request = new XMLHttpRequest();
+    request.open("POST", str);
+    request.send("");
+    request.onreadystatechange = function() {
+      //console.log("Got back data. Ready state: " +
+      //  request.readyState + ", status: " +  request.status);
+
+      //When ready
+      if(request.readyState === 4) {
+        if(request.responseType === "") {
+          var resp = request.response;
+          console.log("\tData was DOMString. Value:" + resp);
+        } else {
+          //console.log("\tType: " + request.responseType);
+          //console.log("\tData: " + request.resonse);
+        }
+      }
+    };
   }
 }
