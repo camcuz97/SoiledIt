@@ -4,32 +4,41 @@ import csv
 # Columns
 # 0 = musym, 1 = mukey, 2 = lat, 3 = long, 4 = muname, 5 = wDepAnnMin, 6 = wDepAJMin, 7 = aws25, 8 = aws50, 9 = aws100, 10 = aws150, 11 = drdc, 12 = drw
 
-class analysis:
+class Analysis:
+
+    global readCSV
+    readCSV = None
 
     def __init__(self):
-        with open('data/sortedDataTrunc.csv') as csvfile:
-            readCSV = csv.reader(csvfile, delimiter = ',')
-            i = 0
+        print "Initialized"
+        try:	
+            csvfile = open('data/sortedDataTrunc.csv')
+            self.readCSV = csv.reader(csvfile, delimiter = ',')
+       	    i = 0
             dict = {}
             csvArray = []
-            for row in readCSV:
+            for row in self.readCSV:
                 csvArray.append(row)
+        except:
+		    readCSV = None
 
     def printCol(csv):
         for row in csv:
             print row[0]
 
-    def findData(minX, maxX, minY, maxY):
+    def findData(self, minX, maxX, minY, maxY):
         rowArray = []
-        for row in rowCSV:
+        if self.readCSV == None:
+		    return
+        for row in self.readCSV:
             if row[2] >= minX and row[2] <= maxX and row[3] >= minY and row[3] <= maxY:
                 rowArray.append(row)
-        return fitnessFunct(rowArray)
+        return self.fitnessFunct(rowArray)
 
     def binSearch(csv, len, minX, maxX, minY, maxY):
         mid = len/2
 
-    def fitnessFunct(rowArray):
+    def fitnessFunct(self, rowArray):
         tupleArray = []
         for row in rowArray:
             tempScore = findFitness(row)

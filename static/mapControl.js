@@ -6,6 +6,10 @@ var secondMarker = null;
 
 var selectPolygon = null;
 
+var heatEnabled = false; //boolean
+var heatMap = null;
+var heatData = null;
+
 function initMap() {
   centerPos = new google.maps.LatLng(40.0, -88.0);
 
@@ -93,6 +97,24 @@ function redrawPolygon() {
       selectPolygon.setMap(map);
     } else {
       //Otherwise, just update the one we already have
+      if(heatEnabled) {
+        selectPolygon.setOptions({
+          paths: selectPolygon.getPath(),
+          strokeColor: '#000000',
+          strokeOpacity: 0.5,
+          fillOpacity: 0,
+          strokeWeight: 2
+        });
+      } else {
+        selectPolygon.setOptions({
+          paths: [coords],
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.5,
+          fillColor: '#AA0000',
+          fillOpacity: 0.2,
+          strokeWeight: 2
+        })
+      }
       selectPolygon.setPath(coords);
     }
   }
@@ -103,6 +125,41 @@ function toggleBounce() {
     marker.setAnimation(null);
   } else {
     marker.setAnimation(google.maps.Animation.BOUNCE);
+  }
+}
+
+function redrawHeatMap() {
+  console.log("map:" + map + " heatMap:" + heatMap + " heatData:" + heatData);
+  if(heatMap == null) {
+    heatMap = new google.maps.visualization.HeatmapLayer({
+      //gradient: ['#FF0000', '#00FF00'],
+      dissipating: true,
+      maxIntensity: 0.75,
+      data: heatData,
+      radius: 75,
+      opacity: 0.5
+    });
+    selectPolygon.setOptions({
+      paths: selectPolygon.getPath(),
+      strokeColor: '#000000',
+      strokeOpacity: 0.5,
+      fillOpacity: 0,
+      strokeWeight: 2
+    });
+    heatMap.setMap(map);
+    heatEnabled = true;
+  } else {
+    heatMap.setData(heatData);
+    heatMap.setMap(map)
+  }
+
+  if(heatMap == null) {
+    if(heatData !== null) {
+      heatMap = new google.maps.visualization.HeatmapLayer({
+      });
+      heatMap.setMap(map);
+    }
+  } else if(heatData !== null) {
   }
 }
 
@@ -134,11 +191,19 @@ function requestData() {
       //When ready
       if(request.readyState === 4) {
         if(request.responseType === "") {
-          var resp = request.response;
-          console.log("\tData was DOMString. Value:" + resp);
+          var resp = JSON.parse(request.response);
+          var dataArray = new Array(resp.length);
+          for(var i = 0; i < resp.length; i++) {
+            //console.log("\t" + resp[i][0] + " " + resp[i][1] + " " + resp[i][2]);
+            dataArray[i] = {location: new google.maps.LatLng(parseFloat(resp[i][0]), parseFloat(resp[i][1])), weight: parseFloat(resp[i][2])};
+          }
+          //console.log("\tData was DOMString. Value:" + resp);
+          //console.log("\tData as JSON object: " + resp);
+          heatData = dataArray;
+          redrawHeatMap();
         } else {
-          //console.log("\tType: " + request.responseType);
-          //console.log("\tData: " + request.resonse);
+          console.log("\tType: " + request.responseType);
+          console.log("\tData: " + request.resonse);
         }
       }
     };
