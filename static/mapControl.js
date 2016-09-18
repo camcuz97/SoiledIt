@@ -1,27 +1,28 @@
-var map;
-var centerPos;
+var map;                  //The google maps object- where we draw everything to
+var centerPos;            //The initial center position of the map
 
-var firstMarker = null;
-var secondMarker = null;
+var firstMarker = null;   //The first placed marker
+var secondMarker = null;  //The second placed marker
 
-var selectPolygon = null;
+var selectPolygon = null; //Boundary polygon of current selection
 
-var heatEnabled = false; //boolean
-var heatMap = null;
-var heatData = null;
+var heatEnabled = false;  //Is the heat map turned on?
+var heatMap = null;       //The heatmap layer object
+var heatData = null;      //The currently displayed heatmap data
+
+var tspPoly = null;
 
 function initMap() {
   centerPos = new google.maps.LatLng(40.0, -88.0);
 
   map = new google.maps.Map(document.getElementById('map'), {
     center: centerPos,
-    zoom: 16,
+    zoom: 14,
     mapTypeId: 'hybrid'
   });
 
   map.addListener('click', function(event) {
     if(firstMarker == null) {
-      //Create a new marker
       firstMarker = new google.maps.Marker({
         map: map,
         draggable: true,
@@ -39,7 +40,6 @@ function initMap() {
         requestData();
       });
     } else if(secondMarker == null) {
-      //Create a new marker
       secondMarker = new google.maps.Marker({
         map: map,
         draggable: true,
@@ -84,55 +84,39 @@ function redrawPolygon() {
       {lat: x1, lng: y1}  //back around
     ];
 
+    var normalOptions = {
+      paths: [coords],
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.5,
+      fillColor: '#AA0000',
+      fillOpacity: 0.2,
+      strokeWeight: 2
+    }
+
     if(selectPolygon == null) {
       //Create a new polygon and draw it
-      selectPolygon = new google.maps.Polygon({
-        paths: [coords],
-        strokeColor: '#FF0000',
-        strokeOpacity: 0.5,
-        fillColor: '#AA0000',
-        fillOpacity: 0.2,
-        strokeWeight: 2
-      });
+      selectPolygon = new google.maps.Polygon(normalOptions);
       selectPolygon.setMap(map);
     } else {
       //Otherwise, just update the one we already have
       if(heatEnabled) {
         selectPolygon.setOptions({
-          paths: selectPolygon.getPath(),
+          paths: [coords],
           strokeColor: '#000000',
           strokeOpacity: 0.5,
           fillOpacity: 0,
           strokeWeight: 2
         });
       } else {
-        selectPolygon.setOptions({
-          paths: [coords],
-          strokeColor: '#FF0000',
-          strokeOpacity: 0.5,
-          fillColor: '#AA0000',
-          fillOpacity: 0.2,
-          strokeWeight: 2
-        })
+        selectPolygon.setOptions(normalOptions);
       }
-      selectPolygon.setPath(coords);
     }
   }
 }
 
-function toggleBounce() {
-  if (marker.getAnimation() !== null) {
-    marker.setAnimation(null);
-  } else {
-    marker.setAnimation(google.maps.Animation.BOUNCE);
-  }
-}
-
 function redrawHeatMap() {
-  console.log("map:" + map + " heatMap:" + heatMap + " heatData:" + heatData);
   if(heatMap == null) {
     heatMap = new google.maps.visualization.HeatmapLayer({
-      //gradient: ['#FF0000', '#00FF00'],
       dissipating: true,
       maxIntensity: 0.75,
       data: heatData,
@@ -168,7 +152,7 @@ function requestData() {
     var lat1 = firstMarker.getPosition().lat();
     var lng1 = firstMarker.getPosition().lng();
     var lat2 = secondMarker.getPosition().lat();
-    var lng2 = secondMarker.getPosition().lng()
+    var lng2 = secondMarker.getPosition().lng();
 
     var x1 = Math.min(lat1, lat2); //lowest lat
     var y1 = Math.min(lng1, lng2); //lowest lng
@@ -184,28 +168,58 @@ function requestData() {
     var request = new XMLHttpRequest();
     request.open("POST", str);
     request.send("");
-    request.onreadystatechange = function() {
-      //console.log("Got back data. Ready state: " +
-      //  request.readyState + ", status: " +  request.status);
-
-      //When ready
-      if(request.readyState === 4) {
-        if(request.responseType === "") {
-          var resp = JSON.parse(request.response);
-          var dataArray = new Array(resp.length);
-          for(var i = 0; i < resp.length; i++) {
-            //console.log("\t" + resp[i][0] + " " + resp[i][1] + " " + resp[i][2]);
-            dataArray[i] = {location: new google.maps.LatLng(parseFloat(resp[i][0]), parseFloat(resp[i][1])), weight: parseFloat(resp[i][2])};
-          }
-          //console.log("\tData was DOMString. Value:" + resp);
-          //console.log("\tData as JSON object: " + resp);
-          heatData = dataArray;
-          redrawHeatMap();
-        } else {
-          console.log("\tType: " + request.responseType);
-          console.log("\tData: " + request.resonse);
+    request.onreadystatechange = function() { //When ready
+      if(request.readyState === 4 && request.responseType === "") {
+        var resp = JSON.parse(request.response);
+        var dataArray = new Array(resp.length);
+        for(var i = 0; i < resp.length; i++) {
+          dataArray[i] = {
+            location: new google.maps.LatLng(
+              parseFloat(resp[i][0]),
+              parseFloat(resp[i][1])),
+            weight: parseFloat(resp[i][2])};
         }
+        heatData = dataArray;
+        redrawHeatMap();
+        travel();
       }
     };
   }
 }
+
+/*
+function travel() {
+  var lat1 = firstMarker.getPosition().lat();
+  var lng1 = firstMarker.getPosition().lng();
+  var lat2 = secondMarker.getPosition().lat();
+  var lng2 = secondMarker.getPosition().lng();
+
+  //Note: 1/69 turns degrees -> miles. Our range is ~3.75 miles
+  var magic = (3.75 / 69);
+
+  //If true, then just one square
+  //if((Math.abs(Math.abs(lat1) - Math.abs(lat2)) <= magic) &&
+  //   (Math.abs(Math.abs(lng1) - Math.abs(lng2)) <= magic)) {
+
+    var data = heatMap.getData();
+    var dArray = [];
+    for(var i = 0; i < data.getLength(); i++)
+      dArray.push[data.getAt(i)];
+    dArray.sort(function(a, b) {return a[2] - b[2];});
+
+    var points = [map.getCenter()];
+    for(var i = 0; i < Math.max(5, data.getLength() / 5) ; i++)
+      points.push(dArray[i][location]);
+    points.push(map.getCenter());
+
+    console.log("Made a line with " + points.length + " points.")
+
+    tspPoly = new google.maps.Polyline({
+      map: map,
+      path: points,
+      strokeColor: '#0000FF',
+      strokeOpacity: 0.7,
+      strokeWeight: 3
+    });
+  //}
+}*/

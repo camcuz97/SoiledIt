@@ -18,7 +18,6 @@ def printCol(csv):
         print row[0]
 
 def findData(minX, maxX, minY, maxY):
-    print "findData called!"
     minLat = abs(minX)
     maxLat = abs(maxX)
 
@@ -36,18 +35,13 @@ def findData(minX, maxX, minY, maxY):
     rowArray = []
     global readCSV
     global csvfile
-    if readCSV == None:
-        print "readCSV was None- returning from findData"
-    else:
+    if readCSV != None:
         count = 0
         for row in readCSV:
             count += 1
-            #print "X:" + str(float(row[2])) + " Y:" + str(float(row[3]))
-            #print "minX:" + minLat + " maxX: " + maxLat + " minY " + minLng + " maxY " + maxLng
             if abs(float(row[2])) >= minLat and abs(float(row[2])) <= maxLat and abs(float(row[3])) >= minLng and abs(float(row[3])) <= maxLng:
                 rowArray.append(row)
         csvfile.seek(0)
-        #print "Number of rows read: " + str(count)
         return fitnessFunct(rowArray)
 
 def binSearch(csv, len, minX, maxX, minY, maxY):
@@ -98,26 +92,32 @@ def findFitness(row):
 
 #end data analysis methods
 
+lastPoints = None
+
 #general- main page
 @app.route('/index')
 @app.route('/')
 def hello_world():
 	return render_template('index.html')
 
-#when we have selected an area
-@app.route('/select', methods=['GET', 'POST'])
+#when we have selected an area, return points
+@app.route('/select', methods=['POST', 'GET'])
 def selector():
 	minlat = float(request.args.get('minlat'))
 	minlng = float(request.args.get('minlng'))
 	maxlat = float(request.args.get('maxlat'))
 	maxlng = float(request.args.get('maxlng'))
 
-	points = findData(minlat, maxlat, minlng, maxlng)
-	return json.dumps(points)
+	lastPoints = findData(minlat, maxlat, minlng, maxlng)
+	return json.dumps(lastPoints)
 
-    #return "Hi! Got data: " + str(minlat)
-	#return "x1:"+str(minlat)+"y1:"+str(minlng)+"x2:"+str(maxlat)+"y2"+str(maxlng)
-	#return str(points[0])
+@app.route('/travel')
+def traveller():
+    if lastPoints == None:
+        print "No points found to calculate!"
+        return "Nothing found!"
+    topTen = sorted(range(len(lastPoints)), key=lambda i: a[i])[-10:]
+
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", debug=True)
