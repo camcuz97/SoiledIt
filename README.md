@@ -2,13 +2,24 @@
 Welcome to the SoiledIt project page, created for the BudLabs hackathon 2016. The general idea is to provide a solution for farmers who want surveys of their land using drone technology, but aims to improve greatly upon the current methods by using historical land data and software. When you have information on the quality of the soil and land, combine it with precipitation data, and add a healthy dose of computing power, it becomes possible to target "problem areas" of a field. When you only have to investigate a handful of points versus blindly scanning the entire field, you can save time, energy, and most importantly, money.
 
 ## Directory structure
-* app.py: The main program that runs the Flask web framework. This controls serving up the various files that the website uses.
-* README.md: You're looking at it!
-* data: A folder containing key data for a selected region. On release, we would pull live data from a server, or similar.
-  * rawdata.csv: The raw soil condition data for a section of IL
-  * custNameMuaggatt.csv: A lookup table for soil designations and their conditions
-* templates: A folder with .html files for the main backbone of the website.
-  * index.html: The homepage's html
-* static: A folder with static files, such as .js and .css.
-  * mapControl.js: Controls the Google Map API in the background
-  * style.css: The style for the main website
+* README.md: You're looking at it! This is a summary of most everything we did.
+* Drone: All of the code related to creating and flying a mockup of a drone.
+  * new_ping.ino: The main Arduino program for the drone. The drone, by the end of the build period, has the (limited) capabilities to fly, and the fully fledged camera/voice/sensor addons installed.
+* Server-Website: All of the code related to the server backend, and the website frontend. We used Flask to serve up pages and deal with traffic, and Javascript scripts to actually display the cool data.
+  * data: A folder containing key data for a selected region. On release, we would pull live data from a server, or similar; right now it's as simple as importing a different set of data, pre-processing it, and replacing "sortedDataTrunc.csv".
+    * custNameMuaggat.csv: A lookup table for soil designations and their conditions.
+    * rawdata.csv: The raw soil condition data for a section of IL (specifically, Champaign county).
+    * sortedData.csv: The entire data set (with additional X and Y coordinates), sorted first by X and then by Y.
+    * sortedDataTrunc.csv: As sortedData.csv, but with all non-utilized data columns removed to save on memory.
+  * pythonSorter: A small script that generated the sorteddata files
+    * rawdata.csv: A copy of the raw data for testing
+    * sorter.py: A small script that generates the sorteddata files
+  * static: Where all of the Flask static files are stored
+    * assets: Contains all of the images we used in the website
+      * (several image files, you get the picture)
+    * mapControl.js: The main frontend file. If you want to see how the Google Maps API was incorporated, or how we drew the data, check here.
+    * style.css: The main style class that makes the website pretty.
+  * templates: The Flask dynamic files. We kept our .html files here.
+    * about.html: The about page. Check us out!
+    * index.html: The main page. You'll see this first!
+  * app.py: The Flask main file. This is where the server handles all the data and incoming requests.
