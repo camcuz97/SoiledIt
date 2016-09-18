@@ -187,7 +187,22 @@ function requestData() {
   }
 }
 
-/*
+function distance(points) {
+  var dist = 0;
+  for(var j = 0; j < points.length - 1; j++) {
+    dist += ((points[j].lat() - points[j+1].lat()) * (points[j].lat() - points[j+1].lat())) +
+      ((points[j].lng() - points[j+1].lng()) * (points[j].lng() - points[j+1].lng()));
+  }
+  return dist;
+}
+
+function swap(points, i, j) {
+  var temp = points[i];
+  points[i] = points[j];
+  points[j] = temp;
+  return points;
+}
+
 function travel() {
   var lat1 = firstMarker.getPosition().lat();
   var lng1 = firstMarker.getPosition().lng();
@@ -204,22 +219,49 @@ function travel() {
     var data = heatMap.getData();
     var dArray = [];
     for(var i = 0; i < data.getLength(); i++)
-      dArray.push[data.getAt(i)];
-    dArray.sort(function(a, b) {return a[2] - b[2];});
+      dArray.push(data.getAt(i));
+    dArray.sort(function(a, b) {return a.weight - b.weight;});
 
-    var points = [map.getCenter()];
-    for(var i = 0; i < Math.max(5, data.getLength() / 5) ; i++)
-      points.push(dArray[i][location]);
+    var points = [];
+    for(var i = 0; i < Math.min(5, data.getLength()) ; i++)
+      points.push(dArray[i].location);
+
+    var bestDistance = distance(points);
+    for(var i = 0; i < 50; i++) {
+      for(var j = 0; j < points.length - 1; j++) {
+        points = swap(points, j, j + 1);
+        var dist = distance(points);
+        if(dist < bestDistance) {
+          bestDistance = dist;
+        } else {
+          points = swap(points, j, j + 1);
+        }
+      }
+    }
+
+    points.unshift(map.getCenter());
     points.push(map.getCenter());
 
     console.log("Made a line with " + points.length + " points.")
+    for(var i = 0; i < points.length; i++)
+      console.log(points[i]);
 
-    tspPoly = new google.maps.Polyline({
-      map: map,
-      path: points,
-      strokeColor: '#0000FF',
-      strokeOpacity: 0.7,
-      strokeWeight: 3
-    });
+    if(tspPoly == null) {
+      tspPoly = new google.maps.Polyline({
+        map: map,
+        path: points,
+        strokeColor: '#0000FF',
+        strokeOpacity: 0.7,
+        strokeWeight: 3
+      });
+    } else {
+      tspPoly.setOptions({
+        map: map,
+        path: points,
+        strokeColor: '#0000FF',
+        strokeOpacity: 0.7,
+        strokeWeight: 3
+      })
+    }
   //}
-}*/
+}
