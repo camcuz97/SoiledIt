@@ -95,10 +95,16 @@ def findFitness(row):
 lastPoints = None
 
 #general- main page
+@app.route('/index.html')
 @app.route('/index')
 @app.route('/')
 def hello_world():
 	return render_template('index.html')
+
+@app.route('/about.html')
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 #when we have selected an area, return points
 @app.route('/select', methods=['POST', 'GET'])

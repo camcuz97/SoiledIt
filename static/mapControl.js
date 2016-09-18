@@ -111,6 +111,12 @@ function redrawPolygon() {
         selectPolygon.setOptions(normalOptions);
       }
     }
+
+    if(tspPoly !== null) {
+      if(tspPoly.getMap() !== null) {
+        tspPoly.setMap(null);
+      }
+    }
   }
 }
 
@@ -181,7 +187,6 @@ function requestData() {
         }
         heatData = dataArray;
         redrawHeatMap();
-        travel();
       }
     };
   }
@@ -210,7 +215,7 @@ function travel() {
   var lng2 = secondMarker.getPosition().lng();
 
   //Note: 1/69 turns degrees -> miles. Our range is ~3.75 miles
-  var magic = (3.75 / 69);
+  //var magic = (3.75 / 69);
 
   //If true, then just one square
   //if((Math.abs(Math.abs(lat1) - Math.abs(lat2)) <= magic) &&
@@ -239,13 +244,11 @@ function travel() {
       }
     }
 
+    //Make sure that the start and end points are in place
     points.unshift(map.getCenter());
     points.push(map.getCenter());
 
-    console.log("Made a line with " + points.length + " points.")
-    for(var i = 0; i < points.length; i++)
-      console.log(points[i]);
-
+    //Redraw
     if(tspPoly == null) {
       tspPoly = new google.maps.Polyline({
         map: map,
