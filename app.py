@@ -18,7 +18,6 @@ def printCol(csv):
         print row[0]
 
 def findData(minX, maxX, minY, maxY):
-    print "findData called!"
     minLat = abs(minX)
     maxLat = abs(maxX)
 
@@ -36,18 +35,13 @@ def findData(minX, maxX, minY, maxY):
     rowArray = []
     global readCSV
     global csvfile
-    if readCSV == None:
-        print "readCSV was None- returning from findData"
-    else:
+    if readCSV != None:
         count = 0
         for row in readCSV:
             count += 1
-            #print "X:" + str(float(row[2])) + " Y:" + str(float(row[3]))
-            #print "minX:" + minLat + " maxX: " + maxLat + " minY " + minLng + " maxY " + maxLng
             if abs(float(row[2])) >= minLat and abs(float(row[2])) <= maxLat and abs(float(row[3])) >= minLng and abs(float(row[3])) <= maxLng:
                 rowArray.append(row)
-        csvfile.seek(0)
-        #print "Number of rows read: " + str(count)
+        csvfile.seek(0) #reset file iterator
         return fitnessFunct(rowArray)
 
 def binSearch(csv, len, minX, maxX, minY, maxY):
@@ -96,7 +90,7 @@ def findFitness(row):
 
     return float(score)/27.0
 
-#end data analysis methods
+#end data analysis methods, begin Flask code
 
 #general- main page
 @app.route('/index')
@@ -114,10 +108,6 @@ def selector():
 
 	points = findData(minlat, maxlat, minlng, maxlng)
 	return json.dumps(points)
-
-    #return "Hi! Got data: " + str(minlat)
-	#return "x1:"+str(minlat)+"y1:"+str(minlng)+"x2:"+str(maxlat)+"y2"+str(maxlng)
-	#return str(points[0])
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", debug=True)
