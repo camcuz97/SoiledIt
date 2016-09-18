@@ -8,6 +8,7 @@
       }
 body{
   background-color: #74C5E8;
+  font-family: "Arial Rounded MT Bold", "Helvetica Rounded", Arial, sans-serif;
 }
 #header {
     text-align: center;
@@ -38,7 +39,7 @@ body{
 }
 #header ul {
   margin: 0;
-  padding: 12vh 0 0;
+  padding: 11vh 0 0;
 }
 #header ul li {
   display: inline;
@@ -50,7 +51,7 @@ body{
   color: #000000;
   display: inline-block;
   font-family: "Arial Rounded MT Bold", "Helvetica Rounded", Arial, sans-serif;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: normal;
   margin: 0;
   padding: 0 0 3px;
