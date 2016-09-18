@@ -17,7 +17,7 @@ body{
     left: 0px;
     right: 0px;
     width: 60%;
-    height: 15vh;
+    height: 20vh;
     z-index: 1;
     margin: 0 auto;
     background-color: #8A8A8A;
@@ -36,16 +36,28 @@ body{
   display: block;
   margin: 0;
   padding: 0;
+  padding-top: -5;
 }
 #header ul {
   margin: 0;
-  padding: 11vh 0 0;
+  padding: 0vh 0 0;
 }
 #header ul li {
   display: inline;
   list-style: none;
   margin: 0;
   padding: 0 10vw;
+}
+#logo{
+  color: #000000;
+  display: inline-block;
+  font-family: "Arial Rounded MT Bold", "Helvetica Rounded", Arial, sans-serif;
+  font-size: 30px;
+  font-weight: normal;
+  margin: 0;
+  padding: -5 0 0px;
+  text-decoration: none;
+  text-transform: uppercase;
 }
 #header ul li a {
   color: #000000;
@@ -54,7 +66,7 @@ body{
   font-size: 20px;
   font-weight: normal;
   margin: 0;
-  padding: 0 0 3px;
+  padding: -3 0 3px;
   text-decoration: none;
   text-transform: uppercase;
 }
@@ -68,7 +80,7 @@ body{
 }
 #list1{
   margin: 0;
-  padding-top: 16vh;
+  padding-top: 20vh;
 
 }
 #list2{
