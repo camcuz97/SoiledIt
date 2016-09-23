@@ -1,4 +1,6 @@
 # SoiledIt
+![Image1](https://github.com/camcuz97/SoiledIt/blob/master/Server-Website/github_image1.png "Example of website usage")
+
 Welcome to the SoiledIt project page, created for the BudLabs hackathon 2016. The general idea is to provide a solution for farmers who want surveys of their land using drone technology, but aims to improve greatly upon the current methods by using historical land data and software. When you have information on the quality of the soil and land, combine it with precipitation data, and add a healthy dose of computing power, it becomes possible to target "problem areas" of a field. When you only have to investigate a handful of points versus blindly scanning the entire field, you can save time, energy, and most importantly, money.
 
 ## Directory structure
